@@ -288,8 +288,6 @@ async function renderEmployee(employeeId) {
           </ul>` : `
           <p class="empty-inline">Ingen højdepunkter endnu. Tænk tilbage: Hvornår blev du sidst glad for noget, ${navn} gjorde?</p>`}
       </section>
-
-      ${childrenPanel(children)}
     </div>
 
     <section class="panel" id="svagheder">
@@ -312,7 +310,10 @@ async function renderEmployee(employeeId) {
         <p class="empty-inline">Ingen udviklingsområder noteret endnu.</p>`}
     </section>
 
-    ${renderCoffeeSection(coffee, coffees)}
+    <div class="two-col">
+      ${childrenPanel(children)}
+      ${renderCoffeeSection(coffee, coffees)}
+    </div>
 
     <section class="panel">
       <h2>Samtaler</h2>
