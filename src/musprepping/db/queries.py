@@ -24,6 +24,7 @@ def get_employees(conn: sqlite3.Connection) -> list[dict[str, Any]]:
             "SELECT COUNT(*) FROM highlights WHERE employee_id = ?", (e["id"],)
         ).fetchone()[0]
         e["next_mus"] = get_next_session(conn, e["id"])
+        e["favorite_coffee"] = get_favorite_coffee(conn, e["id"])
     return employees
 
 
@@ -46,10 +47,15 @@ def insert_employee(
     team: str = "",
     start_date: str | None = None,
     personal_note: str = "",
+    coffee_likes: str = "",
+    coffee_dislikes: str = "",
 ) -> int:
     cur = conn.execute(
-        "INSERT INTO employees (name, role, team, start_date, personal_note) VALUES (?, ?, ?, ?, ?)",
-        (name, role, team, start_date, personal_note),
+        """
+        INSERT INTO employees (name, role, team, start_date, personal_note, coffee_likes, coffee_dislikes)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (name, role, team, start_date, personal_note, coffee_likes, coffee_dislikes),
     )
     return cur.lastrowid
 
@@ -62,10 +68,16 @@ def update_employee(
     team: str = "",
     start_date: str | None = None,
     personal_note: str = "",
+    coffee_likes: str = "",
+    coffee_dislikes: str = "",
 ) -> None:
     conn.execute(
-        "UPDATE employees SET name = ?, role = ?, team = ?, start_date = ?, personal_note = ? WHERE id = ?",
-        (name, role, team, start_date, personal_note, employee_id),
+        """
+        UPDATE employees SET name = ?, role = ?, team = ?, start_date = ?, personal_note = ?,
+            coffee_likes = ?, coffee_dislikes = ?
+        WHERE id = ?
+        """,
+        (name, role, team, start_date, personal_note, coffee_likes, coffee_dislikes, employee_id),
     )
 
 
@@ -267,3 +279,97 @@ def prep_progress(employee: dict[str, Any], session: dict[str, Any] | None) -> d
     }
     done = sum(steps.values())
     return {"steps": steps, "done": done, "total": len(steps), "percent": round(100 * done / len(steps))}
+
+
+# --- Coffee ----------------------------------------------------------------------
+
+RATINGS = ("favorit", "kan_lide", "kan_ikke_lide")
+
+
+def get_coffees(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    return [dict(r) for r in conn.execute("SELECT * FROM coffees ORDER BY id")]
+
+
+def get_coffee_keys(conn: sqlite3.Connection) -> set[str]:
+    return {r["key"] for r in conn.execute("SELECT key FROM coffees")}
+
+
+def get_coffee(conn: sqlite3.Connection, coffee_id: int) -> dict[str, Any] | None:
+    row = conn.execute("SELECT * FROM coffees WHERE id = ?", (coffee_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def get_favorite_coffee(conn: sqlite3.Connection, employee_id: int) -> dict[str, Any] | None:
+    row = conn.execute(
+        """
+        SELECT c.label, c.emoji FROM coffees c
+        JOIN employee_coffees ec ON ec.coffee_id = c.id
+        WHERE ec.employee_id = ? AND ec.rating = 'favorit'
+        """,
+        (employee_id,),
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def set_employee_coffee(conn: sqlite3.Connection, employee_id: int, coffee_id: int, rating: str | None) -> None:
+    """Set (or clear, if rating is None) an employee's rating of a coffee.
+
+    A new 'favorit' first demotes any other favourite of that employee to
+    'kan_lide', since only one favourite is allowed per employee.
+    """
+    if rating is None:
+        conn.execute(
+            "DELETE FROM employee_coffees WHERE employee_id = ? AND coffee_id = ?",
+            (employee_id, coffee_id),
+        )
+        return
+    if rating == "favorit":
+        conn.execute(
+            """
+            UPDATE employee_coffees SET rating = 'kan_lide'
+            WHERE employee_id = ? AND rating = 'favorit' AND coffee_id != ?
+            """,
+            (employee_id, coffee_id),
+        )
+    conn.execute(
+        """
+        INSERT INTO employee_coffees (employee_id, coffee_id, rating) VALUES (?, ?, ?)
+        ON CONFLICT(employee_id, coffee_id) DO UPDATE SET rating = excluded.rating
+        """,
+        (employee_id, coffee_id, rating),
+    )
+
+
+def get_coffee_profile(conn: sqlite3.Connection, employee_id: int) -> dict[str, Any]:
+    """Everything the UI needs to show an employee's coffee preferences."""
+    employee = get_employee(conn, employee_id) or {}
+    rows = conn.execute(
+        """
+        SELECT c.id, c.key, c.label, c.emoji, ec.rating FROM coffees c
+        JOIN employee_coffees ec ON ec.coffee_id = c.id
+        WHERE ec.employee_id = ?
+        ORDER BY c.id
+        """,
+        (employee_id,),
+    ).fetchall()
+    favorite = None
+    likes = []
+    dislikes = []
+    ratings: dict[int, str] = {}
+    for r in rows:
+        ratings[r["id"]] = r["rating"]
+        coffee = {"id": r["id"], "key": r["key"], "label": r["label"], "emoji": r["emoji"]}
+        if r["rating"] == "favorit":
+            favorite = coffee
+        elif r["rating"] == "kan_lide":
+            likes.append(coffee)
+        elif r["rating"] == "kan_ikke_lide":
+            dislikes.append(coffee)
+    return {
+        "favorite": favorite,
+        "likes": likes,
+        "dislikes": dislikes,
+        "likes_text": employee.get("coffee_likes", ""),
+        "dislikes_text": employee.get("coffee_dislikes", ""),
+        "ratings": ratings,
+    }

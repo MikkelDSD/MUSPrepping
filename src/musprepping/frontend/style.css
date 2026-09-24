@@ -350,3 +350,99 @@ textarea { resize: vertical; }
   body { background: #fff; color: #000; }
   .panel { box-shadow: none; border: none; padding: 0; }
 }
+
+/* --- Coffee ----------------------------------------------------------------- */
+
+.tips { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.tips li { background: var(--surface-2); border-radius: 10px; padding: .6rem 1rem; }
+.tips p { margin: 0; }
+.tips p + p { margin-top: .3rem; font-size: .9rem; color: var(--muted); }
+
+.coffee-list { list-style: none; margin: 0 0 .5rem; padding: 0; display: grid; gap: .4rem; }
+.coffee-row {
+  display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+  padding: .5rem .2rem; border-top: 1px solid var(--border);
+}
+.coffee-name { font-weight: 600; }
+.coffee-ratings { display: flex; gap: .3rem; }
+.coffee-toggle {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 999px;
+  width: 2.2rem; height: 2.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  opacity: .55;
+  transition: all .15s ease;
+}
+.coffee-toggle:hover { opacity: 1; border-color: var(--accent); }
+.coffee-toggle.is-active { opacity: 1; background: var(--accent-soft); border-color: var(--accent); }
+.coffee-note { margin: .2rem 0; font-size: .92rem; }
+
+.coffee-badge {
+  display: inline-flex; align-items: center; gap: .3rem;
+  font-size: .82rem; font-weight: 600; color: var(--accent-strong);
+  background: var(--accent-soft); border-radius: 999px; padding: .2rem .7rem;
+  align-self: flex-start;
+}
+
+/* --- Ambient background ------------------------------------------------------ */
+
+/* The panels sit on var(--bg); the blobs live behind everything (z-index: -1) and
+   show through in the gaps between cards. The background colour moves to <html>
+   so the blobs (on body::before/after) stay visible above it. */
+html { background: var(--bg); }
+body { background: transparent; isolation: isolate; }
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: .42;
+  will-change: transform;
+}
+
+body::before {
+  top: -10vh;
+  left: -10vw;
+  width: 55vw;
+  height: 55vw;
+  background: radial-gradient(circle at 30% 30%, var(--accent-soft), var(--sun) 45%, transparent 70%);
+  animation: ambient-drift 52s ease-in-out infinite alternate;
+}
+
+body::after {
+  bottom: -15vh;
+  right: -12vw;
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle at 60% 60%, var(--sage-soft), transparent 70%);
+  animation: ambient-drift-2 67s ease-in-out infinite alternate;
+}
+
+@keyframes ambient-drift {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  100% { transform: translate(6vw, 8vh) scale(1.12) rotate(12deg); }
+}
+
+@keyframes ambient-drift-2 {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  100% { transform: translate(-7vw, -6vh) scale(1.08) rotate(-10deg); }
+}
+
+@media (prefers-color-scheme: dark) {
+  body::before, body::after { opacity: .28; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The global rule above already disables the animation; the blobs remain as a
+     static soft gradient, which is intentional here. */
+}
+
+@media print {
+  body::before, body::after { display: none; }
+}

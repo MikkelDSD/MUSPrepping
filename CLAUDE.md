@@ -29,3 +29,4 @@ The app runs only locally. Employee notes are personal data and stay in the SQLi
 - Keep new endpoints thin: put the SQL in `db/queries.py`, not in `api/main.py`.
 - Code, API paths and docs in English; everything the user sees (UI text, praise, API error `detail`) in Danish.
 - `brewops/` in this folder is a separate repo, ignored by git and pytest. Don't touch it.
+- Coffee preferences (`coffees`/`employee_coffees`, `db/queries.py`'s Coffee section, `frontend/coffee.js`) let the manager note each employee's favourite/liked/disliked drinks from the office coffee machine, shown on the profile, dashboard, prep page and guide — never in the generated praise text or CSV import.
