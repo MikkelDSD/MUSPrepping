@@ -160,6 +160,7 @@ def employee_detail(employee_id: int):
         "selected_strength_ids": [s["id"] for s in queries.get_employee_strengths(conn, employee_id)],
         "highlights": queries.get_highlights(conn, employee_id),
         "sessions": queries.get_sessions(conn, employee_id),
+        "children": queries.get_children(conn, employee_id),
     }
 
 
@@ -237,6 +238,7 @@ def session_detail(session_id: int):
         "strengths": queries.get_strengths(conn),
         "selected_strength_ids": [s["id"] for s in queries.get_employee_strengths(conn, employee_id)],
         "highlights": queries.get_highlights(conn, employee_id),
+        "children": queries.get_children(conn, employee_id),
     }
 
 
@@ -276,6 +278,7 @@ def session_guide(session_id: int):
         "strengths": queries.get_employee_strengths(conn, employee_id),
         "highlights": queries.get_highlights(conn, employee_id),
         "questions": praise.conversation_questions(seed=session_id),
+        "children": queries.get_children(conn, employee_id),
     }
 
 
@@ -293,6 +296,72 @@ def generate_praise():
     return praise.generate_praise(
         employee["name"], strengths, highlights, tone=tone, seed=seed if isinstance(seed, int) else None
     )
+
+
+# --- Children --------------------------------------------------------------------
+
+def parse_birth_year(value) -> int | None:
+    """Accept an int or a numeric string (the HTML form sends strings); empty → None."""
+    if value is None or (isinstance(value, str) and not value.strip()):
+        return None
+    try:
+        year = int(value)
+    except (TypeError, ValueError):
+        abort(400, description=f"ugyldigt fødselsår {value!r}")
+    current_year = date.today().year
+    if not (1940 <= year <= current_year):
+        abort(400, description=f"fødselsår skal være mellem 1940 og {current_year}")
+    return year
+
+
+def child_fields(body: dict) -> dict:
+    name = text(body, "name")
+    if not name:
+        abort(400, description="husk at skrive barnets navn")
+    if len(name) > 80:
+        abort(400, description="navnet må højst være 80 tegn")
+    interests = text(body, "interests")
+    if len(interests) > 200:
+        abort(400, description="interesser må højst være 200 tegn")
+    return {
+        "name": name,
+        "birth_year": parse_birth_year(body.get("birth_year")),
+        "interests": interests,
+    }
+
+
+def child_or_404(conn: sqlite3.Connection, child_id: int) -> dict:
+    child = queries.get_child(conn, child_id)
+    if child is None:
+        abort(404, description=f"intet barn med id {child_id}")
+    return child
+
+
+@app.post("/api/employees/<int:employee_id>/children")
+def create_child(employee_id: int):
+    conn = get_db()
+    employee_or_404(conn, employee_id)
+    child_id = queries.insert_child(conn, employee_id, **child_fields(json_body()))
+    conn.commit()
+    return queries.get_child(conn, child_id), 201
+
+
+@app.put("/api/children/<int:child_id>")
+def update_child(child_id: int):
+    conn = get_db()
+    child_or_404(conn, child_id)
+    queries.update_child(conn, child_id, **child_fields(json_body()))
+    conn.commit()
+    return queries.get_child(conn, child_id)
+
+
+@app.delete("/api/children/<int:child_id>")
+def delete_child(child_id: int):
+    conn = get_db()
+    if not queries.delete_child(conn, child_id):
+        abort(404, description=f"intet barn med id {child_id}")
+    conn.commit()
+    return "", 204
 
 
 def run() -> None:

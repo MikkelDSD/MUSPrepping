@@ -350,3 +350,21 @@ textarea { resize: vertical; }
   body { background: #fff; color: #000; }
   .panel { box-shadow: none; border: none; padding: 0; }
 }
+
+/* --- Children --------------------------------------------------------------- */
+
+.tips { margin: 0; padding-left: 1.2rem; }
+.tips li { margin-bottom: .3rem; }
+
+.children-list { list-style: none; margin: 0 0 1rem; padding: 0; }
+.children-list li { padding: .6rem 0; border-top: 1px solid var(--border); }
+.child-view { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; }
+.child-actions { display: flex; gap: .4rem; align-items: center; flex-shrink: 0; }
+.child-edit { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) auto; gap: .5rem; align-items: center; }
+.child-edit input { min-width: 0; }
+
+.children-line { margin: 0; }
+.children-tip { color: var(--muted); }
+
+.team-search { margin: 0 0 1rem; }
+.team-search input { max-width: 360px; }

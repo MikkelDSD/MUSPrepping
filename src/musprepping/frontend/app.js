@@ -3,6 +3,10 @@
 // Anything user-typed goes through esc() before it touches innerHTML.
 
 import { api, ApiError, OfflineError } from "./api.js";
+import {
+  childrenPanel, bindChildrenPanel, childrenDashboardLine, childrenSearchAttr,
+  teamSearchBox, bindTeamSearch, childrenTip,
+} from "./children.js";
 
 const view = document.getElementById("view");
 const MONTHS = ["januar", "februar", "marts", "april", "maj", "juni", "juli", "august",
@@ -140,7 +144,7 @@ async function renderDashboard() {
     </section>` : "";
 
   const cards = employees.map((e) => `
-    <article class="card employee-card">
+    <article class="card employee-card" data-search="${childrenSearchAttr(e.name, e.children)}">
       <a class="card-link" href="#/medarbejder/${e.id}" aria-label="Åbn ${esc(e.name)}"></a>
       <div class="card-head">
         <span class="avatar">${esc(initials(e.name))}</span>
@@ -153,6 +157,7 @@ async function renderDashboard() {
       ${e.strengths.length
         ? `<div class="chips">${e.strengths.slice(0, 4).map((s) => `<span class="chip chip-static">${s.emoji} ${esc(s.label)}</span>`).join("")}</div>`
         : `<p class="muted small">Ingen styrker valgt endnu – hvad er ${esc(firstName(e.name))} særligt god til?</p>`}
+      ${childrenDashboardLine(e.children)}
       <div class="card-foot">
         ${e.next_mus
           ? `<span>📅 MUS ${danishDate(e.next_mus.scheduled_for)}</span>
@@ -169,7 +174,9 @@ async function renderDashboard() {
     ${upcomingHtml}
     <section>
       <h2>Dit hold</h2>
-      ${employees.length ? `<div class="card-grid">${cards}</div>` : `
+      ${employees.length ? `
+        ${teamSearchBox()}
+        <div class="card-grid" id="team-grid">${cards}</div>` : `
         <div class="empty">
           <p class="empty-emoji">🌻</p>
           <h3>Ingen medarbejdere endnu</h3>
@@ -177,6 +184,8 @@ async function renderDashboard() {
           <a class="btn btn-primary" href="#/ny">+ Ny medarbejder</a>
         </div>`}
     </section>`;
+
+  bindTeamSearch(view);
 }
 
 async function renderEmployeeForm(employeeId) {
@@ -215,7 +224,7 @@ async function renderEmployeeForm(employeeId) {
 }
 
 async function renderEmployee(employeeId) {
-  const { employee: e, strengths, selected_strength_ids, highlights, sessions } =
+  const { employee: e, strengths, selected_strength_ids, highlights, sessions, children } =
     await api.get(`/api/employees/${employeeId}`);
   const selected = new Set(selected_strength_ids);
   const navn = esc(firstName(e.name));
@@ -276,6 +285,8 @@ async function renderEmployee(employeeId) {
           </ul>` : `
           <p class="empty-inline">Ingen højdepunkter endnu. Tænk tilbage: Hvornår blev du sidst glad for noget, ${navn} gjorde?</p>`}
       </section>
+
+      ${childrenPanel(children)}
     </div>
 
     <section class="panel">
@@ -337,12 +348,15 @@ async function renderEmployee(employeeId) {
     toast(`${e.name} er fjernet.`, "info");
     go("#/");
   });
+
+  bindChildrenPanel(view, e.id, () => renderEmployee(employeeId));
 }
 
 async function renderPrep(sessionId) {
-  const [{ session: s, employee: e, strengths, selected_strength_ids, highlights }, tones] =
+  const [{ session: s, employee: e, strengths, selected_strength_ids, highlights, children }, tones] =
     await Promise.all([api.get(`/api/sessions/${sessionId}`), api.get("/api/tones")]);
   const selected = new Set(selected_strength_ids);
+  const tip = childrenTip(firstName(e.name), children);
 
   view.innerHTML = `
     <a class="back" href="#/medarbejder/${e.id}">← ${esc(e.name)}</a>
@@ -362,6 +376,8 @@ async function renderPrep(sessionId) {
       </div>
       <a class="btn" href="#/mus/${s.id}/guide">📄 Samtaleguide</a>
     </section>
+
+    ${tip ? `<section class="panel" id="before-conversation"><h2>Før samtalen</h2><ul class="tips"><li>${tip}</li></ul></section>` : ""}
 
     <section class="panel step">
       <h2><span class="step-no">1</span> Anerkendelse – hvad vil du fremhæve?</h2>
@@ -488,8 +504,9 @@ async function renderPrep(sessionId) {
 }
 
 async function renderGuide(sessionId) {
-  const { session: s, employee: e, strengths, highlights, questions } = await api.get(`/api/sessions/${sessionId}/guide`);
+  const { session: s, employee: e, strengths, highlights, questions, children } = await api.get(`/api/sessions/${sessionId}/guide`);
   const navn = esc(firstName(e.name));
+  const tip = childrenTip(firstName(e.name), children);
 
   view.innerHTML = `
     <div class="no-print guide-toolbar">
@@ -505,6 +522,7 @@ async function renderGuide(sessionId) {
       <section>
         <h2>1. Velkomst</h2>
         <p>Start roligt. Fortæl, at samtalen handler om ${navn} – om det, der går godt, og om hvor ${navn} gerne vil hen.</p>
+        ${tip ? `<p class="children-tip">${tip}</p>` : ""}
       </section>
       <section>
         <h2>2. Anerkendelse</h2>

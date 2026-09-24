@@ -38,7 +38,7 @@ Then open <http://localhost:8125>.
 | Page | What it's for |
 |------|---------------|
 | **Oversigt** (`#/`) | The whole team, upcoming MUS dates, and a progress ring per person (strengths · highlights · praise · goals) |
-| **Medarbejder** (`#/medarbejder/<id>`) | Toggle strengths, log concrete highlights, plan a MUS |
+| **Medarbejder** (`#/medarbejder/<id>`) | Toggle strengths, log concrete highlights, note children's names/ages/interests, plan a MUS |
 | **Forberedelse** (`#/mus/<id>`) | 1) choose what to recognise, 2) generate praise (*varm / begejstret / rolig*) with "Ny variant" and free editing, 3) development goals, wishes, private notes. Everything autosaves. |
 | **Samtaleguide** (`#/mus/<id>/guide`) | Printable one-pager: welcome, praise, appreciative questions, goals, closing |
 

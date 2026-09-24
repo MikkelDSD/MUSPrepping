@@ -55,6 +55,17 @@ CREATE TABLE IF NOT EXISTS mus_sessions (
 
 CREATE INDEX IF NOT EXISTS idx_highlights_employee ON highlights(employee_id);
 CREATE INDEX IF NOT EXISTS idx_mus_sessions_employee ON mus_sessions(employee_id);
+
+CREATE TABLE IF NOT EXISTS children (
+    id          INTEGER PRIMARY KEY,
+    employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    name        TEXT NOT NULL,
+    birth_year  INTEGER,
+    interests   TEXT NOT NULL DEFAULT '',
+    created_at  TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_children_employee ON children(employee_id);
 """
 
 # The strengths catalogue. key is the machine-readable name used in CSVs and by
@@ -96,6 +107,7 @@ def reset_db(conn: sqlite3.Connection) -> None:
     """Drop all data and recreate the schema (used by `uv run seed`)."""
     conn.executescript(
         """
+        DROP TABLE IF EXISTS children;
         DROP TABLE IF EXISTS mus_sessions;
         DROP TABLE IF EXISTS highlights;
         DROP TABLE IF EXISTS employee_strengths;
