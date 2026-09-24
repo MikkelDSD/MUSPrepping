@@ -5,14 +5,11 @@ from musprepping.db import queries
 from musprepping.db.connection import connect
 from musprepping.db.schema import init_db
 
-PAGES_ORIGIN = "https://mikkeldsd.github.io"
-
 
 @pytest.fixture
 def db(tmp_path, monkeypatch):
     path = tmp_path / "api-test.db"
     monkeypatch.setenv("MUSPREPPING_DB", str(path))
-    monkeypatch.delenv("MUSPREPPING_ALLOWED_ORIGINS", raising=False)
     conn = connect(path)
     init_db(conn)
     sofie = queries.insert_employee(conn, "Sofie Lindberg", "Projektleder", "Digital")
@@ -147,21 +144,3 @@ def test_generate_praise_validation(client):
     assert client.post("/api/praise", json={"employee_id": 1, "strength_ids": "8"}).status_code == 400
     assert client.post("/api/praise", json={"employee_id": 1, "tone": "sur"}).status_code == 400
 
-
-def test_cors_allows_github_pages(client):
-    r = client.get("/api/status", headers={"Origin": PAGES_ORIGIN})
-    assert r.headers["Access-Control-Allow-Origin"] == PAGES_ORIGIN
-
-    preflight = client.options("/api/sessions/1", headers={
-        "Origin": PAGES_ORIGIN,
-        "Access-Control-Request-Method": "PATCH",
-        "Access-Control-Request-Private-Network": "true",
-    })
-    assert preflight.status_code == 200
-    assert "PATCH" in preflight.headers["Access-Control-Allow-Methods"]
-    assert preflight.headers["Access-Control-Allow-Private-Network"] == "true"
-
-
-def test_cors_rejects_other_origins(client):
-    r = client.get("/api/overview", headers={"Origin": "https://evil.example"})
-    assert "Access-Control-Allow-Origin" not in r.headers

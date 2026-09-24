@@ -1,8 +1,8 @@
-// MUSPrepping UI: a hash-routed single page app (GitHub Pages has no server-side routing).
+// MUSPrepping UI: a hash-routed single page app served by Flask on port 8125.
 // Views fetch JSON from the API and render with template literals + innerHTML.
 // Anything user-typed goes through esc() before it touches innerHTML.
 
-import { api, ApiError, LOCAL_API, OfflineError } from "./api.js";
+import { api, ApiError, OfflineError } from "./api.js";
 
 const view = document.getElementById("view");
 const MONTHS = ["januar", "februar", "marts", "april", "maj", "juni", "juli", "august",
@@ -536,15 +536,13 @@ function renderOffline() {
   view.innerHTML = `
     <section class="panel narrow offline">
       <p class="empty-emoji">🔌</p>
-      <h1>MUSPrepping kører ikke på din computer endnu</h1>
-      <p>Siden her er kun selve brugerfladen. Dine medarbejdere og noter gemmes i en SQLite-database
-         <strong>på din egen computer</strong> – de bliver aldrig lagt på internettet.</p>
+      <h1>Forbindelsen til MUSPrepping er afbrudt</h1>
+      <p>Dine medarbejdere og noter ligger trygt i databasen på din computer – der er ikke gået noget tabt.</p>
       <ol>
         <li>Åbn en terminal i mappen med MUSPrepping.</li>
         <li>Kør <code>uv run start</code>.</li>
-        <li>Tryk på <em>Prøv igen</em> herunder. Spørger browseren, om siden må tilgå dit lokale netværk, så svar ja.</li>
+        <li>Tryk på <em>Prøv igen</em> herunder.</li>
       </ol>
-      <p class="muted small">Forventet adresse: <code>${LOCAL_API}</code></p>
       <button class="btn btn-primary" id="retry" type="button">Prøv igen</button>
     </section>`;
   document.getElementById("retry").addEventListener("click", route);

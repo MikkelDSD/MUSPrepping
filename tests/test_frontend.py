@@ -1,7 +1,5 @@
-"""Frontend-adjacent checks: the app serves its own static files, and those files
-work unchanged on GitHub Pages."""
+"""Frontend-adjacent checks: the app serves its own static files."""
 
-import re
 from contextlib import closing
 
 import pytest
@@ -36,15 +34,9 @@ def test_static_assets_served(client):
     assert "praise-text" in client.get("/style.css").text
 
 
-def test_frontend_uses_relative_paths_only():
-    # GitHub Pages serves the site from /MUSPrepping/, so root-relative URLs would break.
-    html = (FRONTEND_DIR / "index.html").read_text(encoding="utf-8")
-    assert not re.search(r'(src|href)="/', html)
-
-
 def test_frontend_has_no_external_resources():
-    # the SVG namespace is an identifier, and the API is the boss's own machine
-    allowed = ("http://www.w3.org/2000/svg", "http://127.0.0.1", "http://localhost")
+    # the SVG namespace is an identifier, not a fetched resource
+    allowed = ("http://www.w3.org/2000/svg",)
     for f in FRONTEND_DIR.iterdir():
         content = f.read_text(encoding="utf-8").lower()
         for a in allowed:

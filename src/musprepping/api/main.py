@@ -1,11 +1,6 @@
-"""Flask app: JSON API + static frontend, one process, port 8125.
-
-The frontend in `frontend/` is also published to GitHub Pages. From there it calls
-this API on the boss's own machine, so the API allows that origin via CORS.
-"""
+"""Flask app: JSON API + static frontend, one process, port 8125."""
 
 import mimetypes
-import os
 import sqlite3
 from contextlib import closing
 from datetime import date
@@ -22,14 +17,6 @@ from musprepping.db.schema import init_db
 HOST = "127.0.0.1"
 PORT = 8125
 
-# Browser origins allowed to call the API. Override with a comma-separated
-# $MUSPREPPING_ALLOWED_ORIGINS (e.g. when the Pages site moves).
-DEFAULT_ALLOWED_ORIGINS = (
-    "https://mikkeldsd.github.io",
-    f"http://localhost:{PORT}",
-    f"http://127.0.0.1:{PORT}",
-)
-
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 # Windows can map .js to text/plain in the registry, which breaks ES module loading.
@@ -37,13 +24,6 @@ mimetypes.add_type("text/javascript", ".js")
 
 app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path="")
 app.json.ensure_ascii = False  # keep æøå readable in responses
-
-
-def allowed_origins() -> set[str]:
-    configured = os.environ.get("MUSPREPPING_ALLOWED_ORIGINS")
-    if configured:
-        return {o.strip().rstrip("/") for o in configured.split(",") if o.strip()}
-    return set(DEFAULT_ALLOWED_ORIGINS)
 
 
 def get_db() -> sqlite3.Connection:
@@ -58,21 +38,6 @@ def close_db(_exc):
     conn = g.pop("db", None)
     if conn is not None:
         conn.close()
-
-
-@app.after_request
-def add_cors_headers(response):
-    origin = request.headers.get("Origin", "").rstrip("/")
-    if origin in allowed_origins():
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-        response.headers["Access-Control-Max-Age"] = "600"
-        response.headers.add("Vary", "Origin")
-        # Chrome asks before a public site (GitHub Pages) may talk to localhost.
-        if request.headers.get("Access-Control-Request-Private-Network"):
-            response.headers["Access-Control-Allow-Private-Network"] = "true"
-    return response
 
 
 @app.errorhandler(HTTPException)

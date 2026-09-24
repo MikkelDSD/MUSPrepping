@@ -7,8 +7,7 @@ what people remember most: **sincere, specific recognition**. For each employee 
 strengths, notes concrete highlights, and gets a warm Danish praise text in the tone of their choice.
 The manager then edits it into their own words and prints a one-page conversation guide.
 
-- **UI:** <https://mikkeldsd.github.io/MUSPrepping/> (GitHub Pages), or <http://localhost:8125>
-- **Data:** a SQLite file on the manager's own computer. Employee notes are never published.
+Everything runs locally at <http://localhost:8125>. The data is a SQLite file on the manager's own computer.
 
 ## Requirements
 
@@ -27,7 +26,7 @@ uv run seed
 uv run start
 ```
 
-Then open <http://localhost:8125>, or the GitHub Pages site, which talks to the same local server.
+Then open <http://localhost:8125>.
 
 - `uv run seed`: creates the SQLite database and loads the fictional demo team in `data/inbox/`
 - `uv run start`: starts the app (API + UI) on port 8125
@@ -58,13 +57,13 @@ Files in a folder are matched by name prefix; employees load first. Bad rows are
 ```
 src/musprepping/ingest/     CSV parsing, validation, loading
 src/musprepping/db/         SQLite schema, connection, queries
-src/musprepping/api/        Flask routes + static file serving (port 8125, CORS for Pages)
+src/musprepping/api/        Flask routes + static file serving (port 8125)
 src/musprepping/praise.py   Danish phrase library and praise generator
-src/musprepping/frontend/   index.html, app.js, api.js, style.css (no build step; published to Pages)
+src/musprepping/frontend/   index.html, app.js, api.js, style.css (no build step)
 tests/                      pytest suite
 tickets/                    open tickets, in markdown
 data/inbox/                 fictional demo team as CSV
-.github/workflows/          tests + GitHub Pages deploy
+.github/workflows/          runs the tests on push and pull requests
 ```
 
 See `CLAUDE.md` for architecture notes and conventions.
