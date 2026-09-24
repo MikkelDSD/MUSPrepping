@@ -40,6 +40,8 @@
 }
 
 * { box-sizing: border-box; }
+/* The hidden attribute must win over component display rules (e.g. .child-edit's grid). */
+[hidden] { display: none !important; }
 
 body {
   margin: 0;
