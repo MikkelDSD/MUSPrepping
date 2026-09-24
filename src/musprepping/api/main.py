@@ -1,6 +1,7 @@
 """Flask app: JSON API + static frontend, one process, port 8125."""
 
 import mimetypes
+import random
 import sqlite3
 from contextlib import closing
 from datetime import date
@@ -12,7 +13,7 @@ from werkzeug.exceptions import HTTPException
 from musprepping import praise
 from musprepping.db import queries
 from musprepping.db.connection import connect
-from musprepping.db.schema import init_db
+from musprepping.db.schema import WEAKNESS_EMOJIS, init_db
 
 HOST = "127.0.0.1"
 PORT = 8125
@@ -159,6 +160,7 @@ def employee_detail(employee_id: int):
         "strengths": queries.get_strengths(conn),
         "selected_strength_ids": [s["id"] for s in queries.get_employee_strengths(conn, employee_id)],
         "highlights": queries.get_highlights(conn, employee_id),
+        "weaknesses": queries.get_weaknesses(conn, employee_id),
         "sessions": queries.get_sessions(conn, employee_id),
     }
 
@@ -212,6 +214,28 @@ def delete_highlight(highlight_id: int):
     conn = get_db()
     if not queries.delete_highlight(conn, highlight_id):
         abort(404, description=f"intet højdepunkt med id {highlight_id}")
+    conn.commit()
+    return "", 204
+
+
+@app.post("/api/employees/<int:employee_id>/weaknesses")
+def create_weakness(employee_id: int):
+    conn = get_db()
+    employee_or_404(conn, employee_id)
+    title = text(json_body(), "title")
+    if not title:
+        abort(400, description="beskriv svagheden med et par ord")
+    emoji = random.choice(WEAKNESS_EMOJIS)
+    weakness_id = queries.insert_weakness(conn, employee_id, title, emoji)
+    conn.commit()
+    return {"id": weakness_id, "emoji": emoji}, 201
+
+
+@app.delete("/api/weaknesses/<int:weakness_id>")
+def delete_weakness(weakness_id: int):
+    conn = get_db()
+    if not queries.delete_weakness(conn, weakness_id):
+        abort(404, description=f"ingen svaghed med id {weakness_id}")
     conn.commit()
     return "", 204
 
@@ -275,6 +299,7 @@ def session_guide(session_id: int):
         "employee": queries.get_employee(conn, employee_id),
         "strengths": queries.get_employee_strengths(conn, employee_id),
         "highlights": queries.get_highlights(conn, employee_id),
+        "weaknesses": queries.get_weaknesses(conn, employee_id),
         "questions": praise.conversation_questions(seed=session_id),
     }
 
