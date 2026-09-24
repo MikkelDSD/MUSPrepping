@@ -3,6 +3,7 @@
 // Anything user-typed goes through esc() before it touches innerHTML.
 
 import { api, ApiError, OfflineError } from "./api.js";
+import { renderCoffeeSection, bindCoffeeSection, coffeeFormFields, coffeeBadge, coffeeTip } from "./coffee.js";
 
 const view = document.getElementById("view");
 const MONTHS = ["januar", "februar", "marts", "april", "maj", "juni", "juli", "august",
@@ -150,6 +151,7 @@ async function renderDashboard() {
         </div>
         ${progressRing(e.progress)}
       </div>
+      ${coffeeBadge(e.favorite_coffee)}
       ${e.strengths.length
         ? `<div class="chips">${e.strengths.slice(0, 4).map((s) => `<span class="chip chip-static">${s.emoji} ${esc(s.label)}</span>`).join("")}</div>`
         : `<p class="muted small">Ingen styrker valgt endnu – hvad er ${esc(firstName(e.name))} særligt god til?</p>`}
@@ -196,6 +198,7 @@ async function renderEmployeeForm(employeeId) {
           <label>Team <input name="team" value="${esc(e.team)}" placeholder="Fx Digital"></label>
         </div>
         <label>Ansat siden <input type="date" name="start_date" value="${esc(e.start_date)}"></label>
+        ${coffeeFormFields(e)}
         <label>Hvad sætter du særligt pris på ved denne person?
           <textarea name="personal_note" rows="3" placeholder="Et par ord fra hjertet – kun til dig selv.">${esc(e.personal_note)}</textarea>
         </label>
@@ -215,7 +218,7 @@ async function renderEmployeeForm(employeeId) {
 }
 
 async function renderEmployee(employeeId) {
-  const { employee: e, strengths, selected_strength_ids, highlights, sessions } =
+  const { employee: e, strengths, selected_strength_ids, highlights, sessions, coffee, coffees } =
     await api.get(`/api/employees/${employeeId}`);
   const selected = new Set(selected_strength_ids);
   const navn = esc(firstName(e.name));
@@ -278,6 +281,8 @@ async function renderEmployee(employeeId) {
       </section>
     </div>
 
+    ${renderCoffeeSection(coffee, coffees)}
+
     <section class="panel">
       <h2>Samtaler</h2>
       <form class="form-inline" id="session-form">
@@ -337,12 +342,15 @@ async function renderEmployee(employeeId) {
     toast(`${e.name} er fjernet.`, "info");
     go("#/");
   });
+
+  bindCoffeeSection(view, api, e.id, coffees, handleError);
 }
 
 async function renderPrep(sessionId) {
-  const [{ session: s, employee: e, strengths, selected_strength_ids, highlights }, tones] =
+  const [{ session: s, employee: e, strengths, selected_strength_ids, highlights, coffee }, tones] =
     await Promise.all([api.get(`/api/sessions/${sessionId}`), api.get("/api/tones")]);
   const selected = new Set(selected_strength_ids);
+  const navn = esc(firstName(e.name));
 
   view.innerHTML = `
     <a class="back" href="#/medarbejder/${e.id}">← ${esc(e.name)}</a>
@@ -361,6 +369,13 @@ async function renderPrep(sessionId) {
         </div>
       </div>
       <a class="btn" href="#/mus/${s.id}/guide">📄 Samtaleguide</a>
+    </section>
+
+    <section class="panel" id="before-conversation">
+      <h2>Før samtalen</h2>
+      <ul class="tips">
+        <li>${coffeeTip(firstName(e.name), coffee, e.id)}</li>
+      </ul>
     </section>
 
     <section class="panel step">
@@ -488,7 +503,7 @@ async function renderPrep(sessionId) {
 }
 
 async function renderGuide(sessionId) {
-  const { session: s, employee: e, strengths, highlights, questions } = await api.get(`/api/sessions/${sessionId}/guide`);
+  const { session: s, employee: e, strengths, highlights, questions, coffee } = await api.get(`/api/sessions/${sessionId}/guide`);
   const navn = esc(firstName(e.name));
 
   view.innerHTML = `
@@ -505,6 +520,7 @@ async function renderGuide(sessionId) {
       <section>
         <h2>1. Velkomst</h2>
         <p>Start roligt. Fortæl, at samtalen handler om ${navn} – om det, der går godt, og om hvor ${navn} gerne vil hen.</p>
+        ${coffeeTip(firstName(e.name), coffee)}
       </section>
       <section>
         <h2>2. Anerkendelse</h2>

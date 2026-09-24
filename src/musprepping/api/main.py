@@ -74,16 +74,32 @@ def parse_date(value, *, allow_future: bool = True, required: bool = False) -> s
     return d.isoformat()
 
 
-def employee_fields(body: dict) -> dict:
+def employee_fields(body: dict, current: dict | None = None) -> dict:
+    """`current` (the employee's existing row, on an update) supplies defaults for
+    fields the caller omits entirely, so a PUT without coffee_likes/coffee_dislikes
+    doesn't wipe them."""
     name = text(body, "name")
     if not name:
         abort(400, description="husk at skrive et navn")
+    current = current or {}
+    coffee_likes = current.get("coffee_likes", "")
+    if "coffee_likes" in body:
+        coffee_likes = text(body, "coffee_likes")
+        if len(coffee_likes) > 200:
+            abort(400, description="kaffe – gerne må højst være 200 tegn")
+    coffee_dislikes = current.get("coffee_dislikes", "")
+    if "coffee_dislikes" in body:
+        coffee_dislikes = text(body, "coffee_dislikes")
+        if len(coffee_dislikes) > 200:
+            abort(400, description="kaffe – helst ikke må højst være 200 tegn")
     return {
         "name": name,
         "role": text(body, "role"),
         "team": text(body, "team"),
         "start_date": parse_date(body.get("start_date"), allow_future=False),
         "personal_note": text(body, "personal_note"),
+        "coffee_likes": coffee_likes,
+        "coffee_dislikes": coffee_dislikes,
     }
 
 
@@ -160,14 +176,16 @@ def employee_detail(employee_id: int):
         "selected_strength_ids": [s["id"] for s in queries.get_employee_strengths(conn, employee_id)],
         "highlights": queries.get_highlights(conn, employee_id),
         "sessions": queries.get_sessions(conn, employee_id),
+        "coffee": queries.get_coffee_profile(conn, employee_id),
+        "coffees": queries.get_coffees(conn),
     }
 
 
 @app.put("/api/employees/<int:employee_id>")
 def update_employee(employee_id: int):
     conn = get_db()
-    employee_or_404(conn, employee_id)
-    queries.update_employee(conn, employee_id, **employee_fields(json_body()))
+    current = employee_or_404(conn, employee_id)
+    queries.update_employee(conn, employee_id, **employee_fields(json_body(), current))
     conn.commit()
     return queries.get_employee(conn, employee_id)
 
@@ -237,6 +255,7 @@ def session_detail(session_id: int):
         "strengths": queries.get_strengths(conn),
         "selected_strength_ids": [s["id"] for s in queries.get_employee_strengths(conn, employee_id)],
         "highlights": queries.get_highlights(conn, employee_id),
+        "coffee": queries.get_coffee_profile(conn, employee_id),
     }
 
 
@@ -276,6 +295,7 @@ def session_guide(session_id: int):
         "strengths": queries.get_employee_strengths(conn, employee_id),
         "highlights": queries.get_highlights(conn, employee_id),
         "questions": praise.conversation_questions(seed=session_id),
+        "coffee": queries.get_coffee_profile(conn, employee_id),
     }
 
 
@@ -293,6 +313,29 @@ def generate_praise():
     return praise.generate_praise(
         employee["name"], strengths, highlights, tone=tone, seed=seed if isinstance(seed, int) else None
     )
+
+
+# --- Coffee ----------------------------------------------------------------------
+
+@app.get("/api/coffees")
+def coffees():
+    return jsonify(queries.get_coffees(get_db()))
+
+
+@app.post("/api/employees/<int:employee_id>/coffees")
+def rate_coffee(employee_id: int):
+    conn = get_db()
+    employee_or_404(conn, employee_id)
+    body = json_body()
+    coffee_id = body.get("coffee_id")
+    if not isinstance(coffee_id, int) or queries.get_coffee(conn, coffee_id) is None:
+        abort(400, description=f"ukendt kaffe {coffee_id!r}")
+    rating = body.get("rating")
+    if rating is not None and rating not in queries.RATINGS:
+        abort(400, description=f"ukendt vurdering {rating!r}")
+    queries.set_employee_coffee(conn, employee_id, coffee_id, rating)
+    conn.commit()
+    return queries.get_coffee_profile(conn, employee_id)
 
 
 def run() -> None:
