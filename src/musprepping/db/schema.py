@@ -40,6 +40,14 @@ CREATE TABLE IF NOT EXISTS highlights (
     created_at  TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
 
+CREATE TABLE IF NOT EXISTS weaknesses (
+    id          INTEGER PRIMARY KEY,
+    employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    title       TEXT NOT NULL,
+    emoji       TEXT NOT NULL DEFAULT '',
+    created_at  TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
 CREATE TABLE IF NOT EXISTS mus_sessions (
     id                INTEGER PRIMARY KEY,
     employee_id       INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
@@ -54,8 +62,12 @@ CREATE TABLE IF NOT EXISTS mus_sessions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_highlights_employee ON highlights(employee_id);
+CREATE INDEX IF NOT EXISTS idx_weaknesses_employee ON weaknesses(employee_id);
 CREATE INDEX IF NOT EXISTS idx_mus_sessions_employee ON mus_sessions(employee_id);
 """
+
+# Funny emojis handed out at random when the boss adds a weakness.
+WEAKNESS_EMOJIS = ["🦥", "🐌", "🙈", "🫠", "🤡", "🐢", "🥴", "🦆", "🧀", "🪫", "🙃", "🐙"]
 
 # The strengths catalogue. key is the machine-readable name used in CSVs and by
 # praise.py to look up phrases; keep the two in sync when adding one.
@@ -97,6 +109,7 @@ def reset_db(conn: sqlite3.Connection) -> None:
     conn.executescript(
         """
         DROP TABLE IF EXISTS mus_sessions;
+        DROP TABLE IF EXISTS weaknesses;
         DROP TABLE IF EXISTS highlights;
         DROP TABLE IF EXISTS employee_strengths;
         DROP TABLE IF EXISTS strengths;

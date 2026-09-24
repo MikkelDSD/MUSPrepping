@@ -3,7 +3,7 @@
 Functions take `conn` first and return plain dicts. Writes do not commit; the
 caller (a route handler or the ingest loader) owns the transaction.
 Join aliases: `e` employees, `s` strengths, `es` employee_strengths,
-`h` highlights, `ms` mus_sessions.
+`h` highlights, `w` weaknesses, `ms` mus_sessions.
 """
 
 import sqlite3
@@ -168,6 +168,25 @@ def insert_highlight(
 
 def delete_highlight(conn: sqlite3.Connection, highlight_id: int) -> bool:
     return conn.execute("DELETE FROM highlights WHERE id = ?", (highlight_id,)).rowcount > 0
+
+
+# --- Weaknesses ----------------------------------------------------------------
+
+def get_weaknesses(conn: sqlite3.Connection, employee_id: int) -> list[dict[str, Any]]:
+    rows = conn.execute("SELECT * FROM weaknesses WHERE employee_id = ? ORDER BY id DESC", (employee_id,))
+    return [dict(r) for r in rows]
+
+
+def insert_weakness(conn: sqlite3.Connection, employee_id: int, title: str, emoji: str = "") -> int:
+    cur = conn.execute(
+        "INSERT INTO weaknesses (employee_id, title, emoji) VALUES (?, ?, ?)",
+        (employee_id, title, emoji),
+    )
+    return cur.lastrowid
+
+
+def delete_weakness(conn: sqlite3.Connection, weakness_id: int) -> bool:
+    return conn.execute("DELETE FROM weaknesses WHERE id = ?", (weakness_id,)).rowcount > 0
 
 
 # --- MUS sessions --------------------------------------------------------------

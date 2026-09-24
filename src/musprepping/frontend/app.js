@@ -189,7 +189,7 @@ async function renderEmployeeForm(employeeId) {
       <h1>${title}</h1>
       <form class="form" id="employee-form">
         <label>Navn
-          <input name="name" required value="${esc(e.name)}" placeholder="Fx Sofie Lindberg" autofocus>
+          <input name="name" required value="${esc(e.name)}" placeholder="Fx Nanna Jensen" autofocus>
         </label>
         <div class="form-row">
           <label>Rolle <input name="role" value="${esc(e.role)}" placeholder="Fx Projektleder"></label>
@@ -215,7 +215,7 @@ async function renderEmployeeForm(employeeId) {
 }
 
 async function renderEmployee(employeeId) {
-  const { employee: e, strengths, selected_strength_ids, highlights, sessions } =
+  const { employee: e, strengths, selected_strength_ids, highlights, weaknesses, sessions } =
     await api.get(`/api/employees/${employeeId}`);
   const selected = new Set(selected_strength_ids);
   const navn = esc(firstName(e.name));
@@ -278,6 +278,26 @@ async function renderEmployee(employeeId) {
       </section>
     </div>
 
+    <section class="panel" id="svagheder">
+      <h2>Svagheder</h2>
+      <p class="muted small">Ting, ${navn} kan blive bedre til. Hver svaghed får en sjov emoji med på vejen.</p>
+      <form class="form form-compact" id="weakness-form">
+        <div class="form-row">
+          <input name="title" placeholder="Fx Kommer tit for sent til møder" required aria-label="Svaghed">
+          <button class="btn btn-primary" type="submit">+ Tilføj</button>
+        </div>
+      </form>
+      ${weaknesses.length ? `
+        <ul class="highlight-list">
+          ${weaknesses.map((w) => `
+            <li>
+              <div><strong>${esc(w.emoji)} ${esc(w.title)}</strong></div>
+              <button class="icon-btn" type="button" data-delete-weakness="${w.id}" aria-label="Slet">✕</button>
+            </li>`).join("")}
+        </ul>` : `
+        <p class="empty-inline">Ingen svagheder noteret. Ingen er perfekte – heller ikke ${navn}. 😉</p>`}
+    </section>
+
     <section class="panel">
       <h2>Samtaler</h2>
       <form class="form-inline" id="session-form">
@@ -316,6 +336,19 @@ async function renderEmployee(employeeId) {
   onClick("[data-delete-highlight]", async (btn) => {
     if (!confirm("Slet dette højdepunkt?")) return;
     await api.del(`/api/highlights/${btn.dataset.deleteHighlight}`);
+    await renderEmployee(employeeId);
+  });
+
+  onSubmit("#weakness-form", async (data) => {
+    const { emoji } = await api.post(`/api/employees/${e.id}/weaknesses`, data);
+    toast(`Svaghed noteret ${emoji}`);
+    await renderEmployee(employeeId);
+    document.getElementById("svagheder").scrollIntoView({ block: "start" });
+  });
+
+  onClick("[data-delete-weakness]", async (btn) => {
+    if (!confirm("Slet denne svaghed?")) return;
+    await api.del(`/api/weaknesses/${btn.dataset.deleteWeakness}`);
     await renderEmployee(employeeId);
   });
 
@@ -488,7 +521,7 @@ async function renderPrep(sessionId) {
 }
 
 async function renderGuide(sessionId) {
-  const { session: s, employee: e, strengths, highlights, questions } = await api.get(`/api/sessions/${sessionId}/guide`);
+  const { session: s, employee: e, strengths, highlights, weaknesses, questions } = await api.get(`/api/sessions/${sessionId}/guide`);
   const navn = esc(firstName(e.name));
 
   view.innerHTML = `
@@ -522,6 +555,9 @@ async function renderGuide(sessionId) {
         <h2>4. Udvikling</h2>
         <p><strong>Mål:</strong> ${esc(s.development_goals) || "—"}</p>
         <p><strong>${navn}s ønsker:</strong> ${esc(s.employee_wishes) || "—"}</p>
+        ${weaknesses.length ? `
+          <p><strong>Udviklingsområder:</strong></p>
+          <ul>${weaknesses.map((w) => `<li>${esc(w.emoji)} ${esc(w.title)}</li>`).join("")}</ul>` : ""}
       </section>
       <section>
         <h2>5. Afslutning</h2>

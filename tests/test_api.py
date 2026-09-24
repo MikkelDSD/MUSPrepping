@@ -3,7 +3,7 @@ import pytest
 from musprepping.api.main import app
 from musprepping.db import queries
 from musprepping.db.connection import connect
-from musprepping.db.schema import init_db
+from musprepping.db.schema import WEAKNESS_EMOJIS, init_db
 
 PAGES_ORIGIN = "https://mikkeldsd.github.io"
 
@@ -90,6 +90,22 @@ def test_highlights(client):
     assert client.post("/api/employees/1/highlights", json={"title": ""}).status_code == 400
     assert client.delete(f"/api/highlights/{highlight_id}").status_code == 204
     assert client.delete(f"/api/highlights/{highlight_id}").status_code == 404
+
+
+def test_weaknesses(client):
+    r = client.post("/api/employees/1/weaknesses", json={"title": "Kommer for sent"})
+    assert r.status_code == 201
+    created = r.get_json()
+    assert created["emoji"] in WEAKNESS_EMOJIS
+
+    detail = client.get("/api/employees/1").get_json()
+    assert [(w["title"], w["emoji"]) for w in detail["weaknesses"]] == [("Kommer for sent", created["emoji"])]
+    assert client.get("/api/sessions/1/guide").get_json()["weaknesses"] == detail["weaknesses"]
+
+    assert client.post("/api/employees/1/weaknesses", json={"title": "  "}).status_code == 400
+    assert client.post("/api/employees/999/weaknesses", json={"title": "X"}).status_code == 404
+    assert client.delete(f"/api/weaknesses/{created['id']}").status_code == 204
+    assert client.delete(f"/api/weaknesses/{created['id']}").status_code == 404
 
 
 def test_session_lifecycle(client):

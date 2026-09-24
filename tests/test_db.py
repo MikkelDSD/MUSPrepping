@@ -50,6 +50,19 @@ def test_delete_employee_cascades(conn):
         assert conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] == 0, table
 
 
+def test_weaknesses(conn):
+    employee_id = queries.insert_employee(conn, "Henrik")
+    weakness_id = queries.insert_weakness(conn, employee_id, "Kommer for sent", "🦥")
+    [weakness] = queries.get_weaknesses(conn, employee_id)
+    assert (weakness["title"], weakness["emoji"]) == ("Kommer for sent", "🦥")
+    assert queries.delete_weakness(conn, weakness_id) is True
+    assert queries.delete_weakness(conn, weakness_id) is False
+
+    queries.insert_weakness(conn, employee_id, "Glemmer nøgler", "🙈")
+    queries.delete_employee(conn, employee_id)
+    assert conn.execute("SELECT COUNT(*) FROM weaknesses").fetchone()[0] == 0
+
+
 def test_highlights_by_ids_only_returns_own(conn):
     a = queries.insert_employee(conn, "A")
     b = queries.insert_employee(conn, "B")
