@@ -1,0 +1,11 @@
+{
+    "name": "MUSPrepping",
+    "image": "mcr.microsoft.com/devcontainers/python:3.12",
+    "postCreateCommand": "pip install --user uv && uv sync",
+    "forwardPorts": [8125],
+    "customizations": {
+        "vscode": {
+            "extensions": ["anthropic.claude-code"]
+        }
+    }
+}

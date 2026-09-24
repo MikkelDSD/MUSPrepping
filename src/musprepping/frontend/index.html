@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MUSPrepping</title>
+  <meta name="description" content="Forbered medarbejderudviklingssamtaler med varm og konkret anerkendelse.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💛</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar no-print">
+    <a class="brand" href="#/">
+      <span class="brand-mark" aria-hidden="true">💛</span>
+      <span>
+        <strong>MUSPrepping</strong>
+        <small>Forbered samtaler, der får folk til at vokse</small>
+      </span>
+    </a>
+    <nav>
+      <span id="connection" class="connection" title="Forbindelse til din lokale MUSPrepping-database">
+        <span class="dot"></span><span class="connection-label">Forbinder …</span>
+      </span>
+      <a href="#/">Oversigt</a>
+      <a class="btn btn-primary" href="#/ny">+ Ny medarbejder</a>
+    </nav>
+  </header>
+
+  <main id="view" class="container" tabindex="-1">
+    <p class="loading">Henter …</p>
+  </main>
+
+  <footer class="footer no-print">Anerkendelse virker bedst, når den er ærlig og konkret. 🌱</footer>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

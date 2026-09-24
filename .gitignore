@@ -1,0 +1,8 @@
+# Separate workshop repo that happens to live in the same folder
+brewops/
+
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.db
