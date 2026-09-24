@@ -66,8 +66,10 @@ CREATE INDEX IF NOT EXISTS idx_weaknesses_employee ON weaknesses(employee_id);
 CREATE INDEX IF NOT EXISTS idx_mus_sessions_employee ON mus_sessions(employee_id);
 """
 
-# Funny emojis handed out at random when the boss adds a weakness.
-WEAKNESS_EMOJIS = ["🦥", "🐌", "🙈", "🫠", "🤡", "🐢", "🥴", "🦆", "🧀", "🪫", "🙃", "🐙"]
+# Growth emojis handed out at random when the boss adds a development area
+# ("weakness"). Kept encouraging on purpose: they are printed in the guide the
+# boss may show the employee. Only emoji that render on older Windows fonts.
+WEAKNESS_EMOJIS = ["🌱", "🌿", "🧭", "🔭", "🧩", "🛠️", "📈", "🎯"]
 
 # The strengths catalogue. key is the machine-readable name used in CSVs and by
 # praise.py to look up phrases; keep the two in sync when adding one.

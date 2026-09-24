@@ -224,7 +224,7 @@ def create_weakness(employee_id: int):
     employee_or_404(conn, employee_id)
     title = text(json_body(), "title")
     if not title:
-        abort(400, description="beskriv svagheden med et par ord")
+        abort(400, description="beskriv udviklingsområdet med et par ord")
     emoji = random.choice(WEAKNESS_EMOJIS)
     weakness_id = queries.insert_weakness(conn, employee_id, title, emoji)
     conn.commit()
@@ -235,7 +235,7 @@ def create_weakness(employee_id: int):
 def delete_weakness(weakness_id: int):
     conn = get_db()
     if not queries.delete_weakness(conn, weakness_id):
-        abort(404, description=f"ingen svaghed med id {weakness_id}")
+        abort(404, description=f"intet udviklingsområde med id {weakness_id}")
     conn.commit()
     return "", 204
 

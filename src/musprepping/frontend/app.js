@@ -189,7 +189,7 @@ async function renderEmployeeForm(employeeId) {
       <h1>${title}</h1>
       <form class="form" id="employee-form">
         <label>Navn
-          <input name="name" required value="${esc(e.name)}" placeholder="Fx Nanna Jensen" autofocus>
+          <input name="name" required value="${esc(e.name)}" placeholder="Fx Freja Lund" autofocus>
         </label>
         <div class="form-row">
           <label>Rolle <input name="role" value="${esc(e.role)}" placeholder="Fx Projektleder"></label>
@@ -279,11 +279,11 @@ async function renderEmployee(employeeId) {
     </div>
 
     <section class="panel" id="svagheder">
-      <h2>Svagheder</h2>
-      <p class="muted small">Ting, ${navn} kan blive bedre til. Hver svaghed får en sjov emoji med på vejen.</p>
+      <h2>Udviklingsområder</h2>
+      <p class="muted small">Hvor kan ${navn} vokse? Skriv det som noget at øve sig i – ikke som en fejl.</p>
       <form class="form form-compact" id="weakness-form">
         <div class="form-row">
-          <input name="title" placeholder="Fx Kommer tit for sent til møder" required aria-label="Svaghed">
+          <input name="title" placeholder="Fx Øve sig i at sige fra, når kalenderen er fuld" required aria-label="Udviklingsområde">
           <button class="btn btn-primary" type="submit">+ Tilføj</button>
         </div>
       </form>
@@ -295,7 +295,7 @@ async function renderEmployee(employeeId) {
               <button class="icon-btn" type="button" data-delete-weakness="${w.id}" aria-label="Slet">✕</button>
             </li>`).join("")}
         </ul>` : `
-        <p class="empty-inline">Ingen svagheder noteret. Ingen er perfekte – heller ikke ${navn}. 😉</p>`}
+        <p class="empty-inline">Ingen udviklingsområder noteret endnu.</p>`}
     </section>
 
     <section class="panel">
@@ -341,13 +341,13 @@ async function renderEmployee(employeeId) {
 
   onSubmit("#weakness-form", async (data) => {
     const { emoji } = await api.post(`/api/employees/${e.id}/weaknesses`, data);
-    toast(`Svaghed noteret ${emoji}`);
+    toast(`Udviklingsområde noteret ${emoji}`);
     await renderEmployee(employeeId);
     document.getElementById("svagheder").scrollIntoView({ block: "start" });
   });
 
   onClick("[data-delete-weakness]", async (btn) => {
-    if (!confirm("Slet denne svaghed?")) return;
+    if (!confirm("Slet dette udviklingsområde?")) return;
     await api.del(`/api/weaknesses/${btn.dataset.deleteWeakness}`);
     await renderEmployee(employeeId);
   });
