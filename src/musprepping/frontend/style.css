@@ -390,63 +390,141 @@ textarea { resize: vertical; }
 
 /* --- Ambient background ------------------------------------------------------ */
 
-/* The panels sit on var(--bg); the blobs live behind everything (z-index: -1) and
-   show through in the gaps between cards. The background colour moves to <html>
-   so the blobs (on body::before/after) stay visible above it. */
+/* A calm, slowly moving backdrop: three soft colour fields drifting on long,
+   out-of-step cycles, and now and then a faint wisp of coffee steam rising in the
+   bottom-left corner. Everything sits behind the content (z-index: -1) and only
+   shows in the gaps between cards. Only transform and opacity animate, so it
+   stays cheap. The page colour lives on <html> so these layers sit above it.
+   Each field also "breathes" (a slow fade in and out) on its own rhythm.
+   With prefers-reduced-motion (which Windows reports whenever "Show animations"
+   is off, the default on Windows Server) motion is reduced, not removed: see the
+   media query at the end of this section. */
+:root { --steam: rgba(214, 150, 110, .24); --ambient-opacity: .55; }
+@media (prefers-color-scheme: dark) {
+  :root { --steam: rgba(255, 236, 222, .08); --ambient-opacity: .3; }
+}
+
 html { background: var(--bg); }
 body { background: transparent; isolation: isolate; }
 
+html::before,
+html::after,
 body::before,
 body::after {
   content: "";
   position: fixed;
   z-index: -1;
   pointer-events: none;
-  border-radius: 50%;
-  filter: blur(70px);
-  opacity: .42;
-  will-change: transform;
+  will-change: transform, opacity;
 }
 
+/* Warm sun glow, top left */
 body::before {
-  top: -10vh;
-  left: -10vw;
-  width: 55vw;
-  height: 55vw;
-  background: radial-gradient(circle at 30% 30%, var(--accent-soft), var(--sun) 45%, transparent 70%);
-  animation: ambient-drift 52s ease-in-out infinite alternate;
+  top: -20vmax;
+  left: -16vmax;
+  width: 64vmax;
+  height: 64vmax;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, var(--sun), var(--accent-soft) 35%, transparent 68%);
+  filter: blur(50px);
+  --layer: 1;
+  opacity: calc(var(--ambient-opacity) * var(--layer));
+  animation: ambient-drift 58s ease-in-out infinite alternate, ambient-breathe 17s ease-in-out infinite;
 }
 
+/* Sage field, bottom right */
 body::after {
-  bottom: -15vh;
-  right: -12vw;
-  width: 60vw;
-  height: 60vw;
-  background: radial-gradient(circle at 60% 60%, var(--sage-soft), transparent 70%);
-  animation: ambient-drift-2 67s ease-in-out infinite alternate;
+  bottom: -26vmax;
+  right: -18vmax;
+  width: 72vmax;
+  height: 72vmax;
+  border-radius: 50%;
+  background: radial-gradient(circle at 55% 55%, var(--sage), var(--sage-soft) 30%, transparent 66%);
+  filter: blur(60px);
+  --layer: .8;
+  opacity: calc(var(--ambient-opacity) * var(--layer));
+  animation: ambient-drift-2 73s ease-in-out infinite alternate, ambient-breathe 23s ease-in-out infinite;
+}
+
+/* Apricot field wandering across the middle right */
+html::before {
+  top: 28vh;
+  right: -12vmax;
+  width: 46vmax;
+  height: 46vmax;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, var(--accent), var(--accent-soft) 30%, transparent 65%);
+  filter: blur(70px);
+  --layer: .45;
+  opacity: calc(var(--ambient-opacity) * var(--layer));
+  animation: ambient-drift-3 89s ease-in-out infinite alternate, ambient-breathe 29s ease-in-out infinite;
+}
+
+/* A wisp of coffee steam: rises, sways, fades, then rests before the next one */
+html::after {
+  bottom: -8vh;
+  left: 4vw;
+  width: 16vmax;
+  height: 70vh;
+  background:
+    radial-gradient(ellipse 40% 18% at 50% 85%, var(--steam), transparent 70%),
+    radial-gradient(ellipse 34% 16% at 42% 55%, var(--steam), transparent 70%),
+    radial-gradient(ellipse 28% 14% at 58% 25%, var(--steam), transparent 70%);
+  filter: blur(14px);
+  opacity: 0;
+  animation: ambient-steam 26s ease-in-out infinite;
 }
 
 @keyframes ambient-drift {
-  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  100% { transform: translate(6vw, 8vh) scale(1.12) rotate(12deg); }
+  0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+  33%  { transform: translate(7vw, 5vh) scale(1.08) rotate(8deg); }
+  66%  { transform: translate(3vw, 12vh) scale(.96) rotate(-4deg); }
+  100% { transform: translate(10vw, 7vh) scale(1.12) rotate(12deg); }
 }
 
 @keyframes ambient-drift-2 {
-  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  100% { transform: translate(-7vw, -6vh) scale(1.08) rotate(-10deg); }
+  0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+  40%  { transform: translate(-6vw, -9vh) scale(1.06) rotate(-8deg); }
+  75%  { transform: translate(-11vw, -3vh) scale(1.1) rotate(-14deg); }
+  100% { transform: translate(-4vw, -12vh) scale(.97) rotate(-6deg); }
 }
 
-@media (prefers-color-scheme: dark) {
-  body::before, body::after { opacity: .28; }
+@keyframes ambient-drift-3 {
+  0%   { transform: translate(0, 0) scale(.9); }
+  50%  { transform: translate(-18vw, 14vh) scale(1.1); }
+  100% { transform: translate(-8vw, -10vh) scale(1); }
 }
 
+@keyframes ambient-steam {
+  0%   { transform: translateY(12vh) scaleX(.7); opacity: 0; }
+  12%  { opacity: .9; }
+  45%  { transform: translate(1.5vw, -18vh) scaleX(1.05) skewX(-6deg); opacity: .55; }
+  70%  { transform: translate(-1vw, -34vh) scaleX(1.35) skewX(5deg); opacity: 0; }
+  100% { transform: translate(-1vw, -34vh) scaleX(1.35) skewX(5deg); opacity: 0; }
+}
+
+@keyframes ambient-breathe {
+  0%, 100% { opacity: calc(var(--ambient-opacity) * var(--layer)); }
+  50%      { opacity: calc(var(--ambient-opacity) * var(--layer) * .6); }
+}
+
+@keyframes ambient-calm {
+  from { transform: translate(0, 0); }
+  to   { transform: translate(6vw, 5vh); }
+}
+
+/* Reduced motion: the global rule above switches animations off everywhere.
+   The colour fields get them back in a much calmer form (a drift of about a
+   pixel per second, plus the breathing fade); the steam stays hidden. These
+   selectors are more specific than `*::before`, so their !important wins. */
 @media (prefers-reduced-motion: reduce) {
-  /* The global rule above already disables the animation; the blobs remain as a
-     static soft gradient, which is intentional here. */
+  body::before { animation: ambient-calm 120s ease-in-out infinite alternate, ambient-breathe 17s ease-in-out infinite !important; }
+  body::after  { animation: ambient-calm 150s ease-in-out infinite alternate-reverse, ambient-breathe 23s ease-in-out infinite !important; }
+  html::before { animation: ambient-calm 180s ease-in-out infinite alternate, ambient-breathe 29s ease-in-out infinite !important; }
 }
 
 @media print {
-  body::before, body::after { display: none; }
+  html::before, html::after, body::before, body::after { display: none; }
 }
 
 /* --- Children --------------------------------------------------------------- */
