@@ -25,6 +25,7 @@ def get_employees(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         ).fetchone()[0]
         e["next_mus"] = get_next_session(conn, e["id"])
         e["favorite_coffee"] = get_favorite_coffee(conn, e["id"])
+        e["children"] = [{"id": c["id"], "name": c["name"], "birth_year": c["birth_year"]} for c in get_children(conn, e["id"])]
     return employees
 
 
@@ -373,3 +374,53 @@ def get_coffee_profile(conn: sqlite3.Connection, employee_id: int) -> dict[str, 
         "dislikes_text": employee.get("coffee_dislikes", ""),
         "ratings": ratings,
     }
+
+
+# --- Children --------------------------------------------------------------------
+
+def get_children(conn: sqlite3.Connection, employee_id: int) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        """
+        SELECT ch.* FROM children ch
+        WHERE ch.employee_id = ?
+        ORDER BY ch.birth_year IS NULL, ch.birth_year, ch.name COLLATE NOCASE
+        """,
+        (employee_id,),
+    )
+    return [dict(r) for r in rows]
+
+
+def get_child(conn: sqlite3.Connection, child_id: int) -> dict[str, Any] | None:
+    row = conn.execute("SELECT * FROM children WHERE id = ?", (child_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def insert_child(
+    conn: sqlite3.Connection,
+    employee_id: int,
+    name: str,
+    birth_year: int | None = None,
+    interests: str = "",
+) -> int:
+    cur = conn.execute(
+        "INSERT INTO children (employee_id, name, birth_year, interests) VALUES (?, ?, ?, ?)",
+        (employee_id, name, birth_year, interests),
+    )
+    return cur.lastrowid
+
+
+def update_child(
+    conn: sqlite3.Connection,
+    child_id: int,
+    name: str,
+    birth_year: int | None = None,
+    interests: str = "",
+) -> None:
+    conn.execute(
+        "UPDATE children SET name = ?, birth_year = ?, interests = ? WHERE id = ?",
+        (name, birth_year, interests, child_id),
+    )
+
+
+def delete_child(conn: sqlite3.Connection, child_id: int) -> bool:
+    return conn.execute("DELETE FROM children WHERE id = ?", (child_id,)).rowcount > 0

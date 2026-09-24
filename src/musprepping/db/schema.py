@@ -83,6 +83,17 @@ CREATE TABLE IF NOT EXISTS employee_coffees (
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_employee_coffees_one_favorite
     ON employee_coffees(employee_id) WHERE rating = 'favorit';
+
+CREATE TABLE IF NOT EXISTS children (
+    id          INTEGER PRIMARY KEY,
+    employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    name        TEXT NOT NULL,
+    birth_year  INTEGER,
+    interests   TEXT NOT NULL DEFAULT '',
+    created_at  TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_children_employee ON children(employee_id);
 """
 
 # Growth emojis handed out at random when the boss adds a development area
@@ -160,6 +171,7 @@ def reset_db(conn: sqlite3.Connection) -> None:
         """
         DROP TABLE IF EXISTS employee_coffees;
         DROP TABLE IF EXISTS coffees;
+        DROP TABLE IF EXISTS children;
         DROP TABLE IF EXISTS mus_sessions;
         DROP TABLE IF EXISTS weaknesses;
         DROP TABLE IF EXISTS highlights;

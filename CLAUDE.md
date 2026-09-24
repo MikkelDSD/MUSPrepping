@@ -12,6 +12,7 @@ Helps a manager prepare for MUS (*medarbejderudviklingssamtaler*, the Danish ann
 - `praise.py` is the phrase library and `generate_praise()`, a pure function (no DB). Every strength `key` in `schema.STRENGTHS` needs phrases in `STRENGTH_PHRASES` (a test enforces it). Passing the same `seed` gives the same text.
 - `api/main.py` is a thin Flask layer: route handlers validate, call `queries.py`/`praise.py`, `conn.commit()`, and return dicts as JSON. Errors are `{"detail": ...}` (same shape as FastAPI's, so it matches brewops). It also serves `frontend/` as static files, so the API and UI are one process on port 8125.
 - `frontend/` is vanilla JS/HTML/CSS with no framework and no build step. `app.js` is a hash-routed SPA (`#/`, `#/medarbejder/1`, `#/mus/1`, …) that fetches the JSON API via `api.js` and renders with template literals + `innerHTML`. Always pass user text through `esc()`. No external resources (a test enforces it), so the app works fully offline. If the server stops mid-session, the UI shows a "run `uv run start`" screen instead of an error.
+- `frontend/children.js` renders and binds the "🧸 Børn" panel (each employee's children's names, birth years, and interests) so the manager can quickly ask about them before a MUS; it also drives the dashboard's team search box and the "Før samtalen" tip.
 
 The app runs only locally. Employee notes are personal data and stay in the SQLite file on the manager's machine.
 
